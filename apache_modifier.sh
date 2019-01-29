@@ -5,38 +5,44 @@
 service="apache2"
 
 modify_apache(){
-   #takes the argument $1  and check if it has the same value	
+   #takes the argument $1  and check if it has the same value
+   cd /etc/apache2/sites-enabled/
+   echo "Need Permissions"
+   sudo touch changes.txt
+   sudo chmod o+w changes.txt
+   sudo chmod o+w 000-default.conf
+
    if [ "$1" == "server" ]
    then
        echo "Insert server name"
        read svname
-       cd /etc/apache2/sites-enabled/
-       sudo touch changes.txt
-       if  grep "servername" changes.txt > /dev/null
+
+       if  [ -f changes.txt ]
        then
 	   oldsvname= grep "servername" changes.txt | cut -d "=" -f2 > /dev/null 
-	   sed -i "localhost/ s/$oldsvname/$svname/" vhost2.conf    
-           sed -i "/servername/ s/servername.*/servername=$svname/" changes.txt
+	   sudo sed -i "/ServerName/ s/$oldsvname/$svname/" 000-default.conf    
+           sudo  sed -i "/servername/ s/servername.*/servername=$svname/" changes.txt
 	   source changes.txt
        else
+       	       
        sudo sed -i "s/localhost/$svname/" 000-default.conf
        sudo echo "servername =$svname" >> changes.txt
+
        fi
 
    elif [ "$1" == "email" ]
    then
        echo "Insert an email name"
        read emailvar 
-       cd /etc/apache2/sites-enabled/
-       sudo touch changes.txt
+       if  [ -f changes.txt ]
 
-       if  grep "emailname" changes.txt > /dev/null
        then
 	   #old email contains emailname=value then cut gets only the value part
 	   oldemail= grep "emailname" changes.txt | cut -d "=" -f2 > /dev/null 
 	   sudo sed -i "Serv.*Admin/ s/$oldemail/$emailvar/" 000-default.conf    
            sudo sed -i "/emailname/ s/email.*/emailname=$emailvar/" changes.txt
 	   source changes.txt
+       
        else
        #search a string that starts with Serv and finish with Admin 
        #replace string that starts with web and finish wih host with the var
@@ -48,14 +54,12 @@ modify_apache(){
    then
        echo "Insert path to directory root"
        read pathvar
-       cd /etc/apache2/sites-enabled/
-       sudo touch changes.txt
 
        #@ will accept / on the input
-       if  grep "rootdirectory" changes.txt > /dev/null
+       if [ -f changes.txt ]
        then
 	   olddir= grep "roodirectory" changes.txt | cut -d "=" -f2 > /dev/null 
-	   sudo sed -i "s/$olddir/$pathvar/" 000-default.conf    
+	   sudo sed -i "s@$olddir@$pathvar@" 000-default.conf    
            sudo sed -i "/rootdirectory/ s/rootdirectory.*/rootdirectory=$pathvar/" changes.txt
 	   source changes.txt
        else
@@ -78,11 +82,10 @@ modify_apache(){
        fi
              
        cd /etc/apache2/sites-enabled       
-       sudo touch changes.txt
 
        echo "Insert the name of your wsgi file "
        read wsgi_script
-       if  grep "emailname" changes.txt > /dev/null
+       if [ -f changes.txt ]
        then
 	   oldwsgi= grep "oldwsgi" changes.txt | cut -d "=" -f2 > /dev/null 
 	   sudo sed -i "/myapp/ s/$oldwsgi/$wsgi_script/" 000-default.conf    
@@ -98,6 +101,7 @@ modify_apache(){
 if pgrep -x "$service" > /dev/null
 then
     echo "do you want to modify something of apache?"
+    echo "Most operations will need the root password in order to work"
     read answer 
     if [ "$answer"  == "yes" ] || [ "$answer" == "y" ]
     then
