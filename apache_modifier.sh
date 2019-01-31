@@ -21,9 +21,7 @@ modify_apache(){
    then
        echo "Insert server name"
        read svname
-       cd /etc/apache2/sites-enabled/
-       #touch won't destroy your file if exists already
-       sudo touch changes.txt
+     
        if  grep -q "servername" changes.txt 
        then
 	   oldsvname="$(grep 'servername' changes.txt | cut -d '=' -f2)"  
@@ -40,7 +38,6 @@ modify_apache(){
        echo "Insert an email name"
        read emailvar 
        if  grep -q "emailname" changes.txt 
-
        then
 	   #old email contains emailname=value then cut gets only the value part
 	   oldemail="$(grep "emailname" changes.txt | cut -d "=" -f2)" 
