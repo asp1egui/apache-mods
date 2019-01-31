@@ -21,12 +21,24 @@ modify_apache(){
    then
        echo "Insert server name"
        read svname
+<<<<<<< HEAD
 
        if grep -q 'servername' changes.txt
        then
 	   oldsvname="$(grep 'servername' changes.txt | cut -d '=' -f2)"
 	   sudo sed -i "s/$oldsvname/$svname/" vhost.conf    
            sudo  sed -i "/servername/ s/servername.*/servername=$svname/" changes.txt
+=======
+       cd /etc/apache2/sites-enabled/
+       #touch won't destroy your file if exists already
+       sudo touch changes.txt
+       if  grep "servername" changes.txt > /dev/null
+       then
+	   oldsvname= grep "servername" changes.txt | cut -d "=" -f2 > /dev/null 
+	   sed -i "localhost/ s/$oldsvname/$svname/" 000-default.conf    
+           sed -i "/servername/ s/servername.*/servername=$svname/" changes.txt
+	   source changes.txt
+>>>>>>> c4d0539eb418bdc72ca8018ad3f8b6a976fb4066
        else
            sudo sed -i "s/localhost/$svname/" vhost.conf
            sudo echo "servername =$svname" >> changes.txt
