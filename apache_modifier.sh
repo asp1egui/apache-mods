@@ -3,20 +3,26 @@
 # apache modifier
 #modify the name of the folders and files of the virtual conf to your need
 service="apache2"
-
+dirsite="/etc/apache2/sites-enabled"
 modify_apache(){
-   #takes the argument $1  and check if it has the same value
-   cd /etc/apache2/sites-enabled/
+   
+   if [ ! -f "vhost.conf" ];then
+   wget https://raw.githubusercontent.com/asp1egui/apache-mods/master/vhost.conf
+      if [ ! -w "vhost.conf" ];then
+         chmod o+w vhost.conf
+	 sudo mv /etc/apache2/sites-available
+	 sudo a2ensite vhost.conf
+      fi   
+   fi
+
+   cd "$dirsite"
    echo "Need Permission"
    if [ ! -f "changes.txt" ];then
       sudo touch changes.txt
       sudo chmod o+w changes.txt
    fi
    
-   if [ ! -w "vhost.conf" ];then
-      sudo chmod o+w vhost.conf
-   fi
-
+#takes the answer from parts and check if it has the same value
    if [ "$1" == "server" ]
    then
        echo "Insert server name"
@@ -27,28 +33,31 @@ modify_apache(){
 	   oldsvname="$(grep 'servername' changes.txt | cut -d '=' -f2)"  
 	   sed -i "s/$oldsvname/$svname/" vhost.conf    
            sed -i "/servername/ s/servername.*/servername=$svname/" changes.txt
-	   source changes.txt
+	   again 
        else
            sudo sed -i "s/localhost/$svname/" vhost.conf
            sudo echo "servername =$svname" >> changes.txt
+	   again
        fi
 
    elif [ "$1" == "email" ]
    then
        echo "Insert an email name"
        read emailvar 
+       
        if  grep -q "emailname" changes.txt 
        then
 	   #old email contains emailname=value then cut gets only the value part
 	   oldemail="$(grep "emailname" changes.txt | cut -d "=" -f2)" 
 	   sudo sed -i "s/$oldemail/$emailvar/" vhost.conf    
            sudo sed -i "/emailname/ s/email.*/emailname=$emailvar/" changes.txt
-       
+           again     
        else
        #search a string that starts with Serv and finish with Admin 
        #replace string that starts with web and finish wih host with the var
            sudo sed -i "/Serv.*Admin/ s/web.*com/$emailvar/" vhost.conf
            sudo echo "emailname =$emailvar" >> changes.txt
+	   again
        fi
        
    elif [ "$1" == "root" ]
@@ -62,9 +71,11 @@ modify_apache(){
 	   olddir="$(grep "rootdirectory" changes.txt | cut -d "=" -f2)"
 	   sudo sed -i "s@$olddir@$pathvar@" vhost.conf    
            sudo sed -i "/rootdirectory/ s@rootdirectory.*@rootdirectory=$pathvar@" changes.txt
+	   again
        else
            sudo sed -i "s@python@$pathvar@" vhost.conf
            sudo echo "rootdirectory=$pathvar" >> changes.txt
+	   again
        fi
 
    elif [ "$1" == "wsgi" ]
@@ -80,7 +91,7 @@ modify_apache(){
           fi 
        fi
              
-       cd /etc/apache2/sites-enabled       
+       cd "$dirsite"      
 
        echo "Insert the name of the wsgi file"
        read wsgi_script
@@ -89,11 +100,24 @@ modify_apache(){
 	   oldwsgi="$( grep 'wsgifile' changes.txt | cut -d '=' -f2)"  
 	   sudo sed -i "s/$oldwsgi/$wsgi_script/" vhost.conf    
            sudo sed -i "/wsgifile/ s/wsgifile.*/wsgifile=$wsgi_script/" changes.txt
+           again       
        else
            sudo sed -i "s/myapp/$wsgi_script/" vhost.conf
            sudo echo "wsgifile = $wsgi_script" >> changes.txt
+	   again
        fi 
    fi
+}
+
+again(){
+       echo "again?"
+       read again1
+       if [ "$again1" == "yes" ] || [ "$again1" == "y" ]
+       then
+           parts
+       else
+           sudo systemctl reload apache2	       
+       fi
 }
 
 parts(){
