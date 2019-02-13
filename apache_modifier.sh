@@ -1,27 +1,39 @@
 #!/bin/bash
-#practice bash skills
 # apache modifier
 #modify the name of the folders and files of the virtual conf to your need
 service="apache2"
 dirsite="/etc/apache2/sites-enabled"
+webdir="/var/www/html"
 modify_apache(){
-   
+
    if [ ! -f "vhost.conf" ];then
    wget https://raw.githubusercontent.com/asp1egui/apache-mods/master/vhost.conf
       if [ ! -w "vhost.conf" ];then
          chmod o+w vhost.conf
-	 sudo mv /etc/apache2/sites-available
+	 echo "Need Permissions"
+	 sudo mv vhost.conf /etc/apache2/sites-available
 	 sudo a2ensite vhost.conf
       fi   
    fi
 
    cd "$dirsite"
-   echo "Need Permission"
    if [ ! -f "changes.txt" ];then
+      echo "Need Permissions"   
       sudo touch changes.txt
       sudo chmod o+w changes.txt
    fi
-   
+
+   if [ ! -d "$webdir/python" ];then
+       echo "Need Permissions"
+       sudo mkdir "$webdir/python"
+       cd
+       pwd
+       wget https://raw.githubusercontent.com/asp1egui/apache-mods/master/flaskapp.py
+       sudo mv flaskapp.py "$webdir/python/"
+       cd -
+       pwd
+   fi
+
 #takes the answer from parts and check if it has the same value
    if [ "$1" == "server" ]
    then
@@ -31,8 +43,8 @@ modify_apache(){
        if  grep -q "servername" changes.txt 
        then
 	   oldsvname="$(grep 'servername' changes.txt | cut -d '=' -f2)"  
-	   sed -i "s/$oldsvname/$svname/" vhost.conf    
-           sed -i "/servername/ s/servername.*/servername=$svname/" changes.txt
+	   sudo sed -i "s/$oldsvname/$svname/" vhost.conf    
+           sudo sed -i "/servername/ s/servername.*/servername=$svname/" changes.txt
 	   again 
        else
            sudo sed -i "s/localhost/$svname/" vhost.conf
@@ -53,8 +65,6 @@ modify_apache(){
            sudo sed -i "/emailname/ s/email.*/emailname=$emailvar/" changes.txt
            again     
        else
-       #search a string that starts with Serv and finish with Admin 
-       #replace string that starts with web and finish wih host with the var
            sudo sed -i "/Serv.*Admin/ s/web.*com/$emailvar/" vhost.conf
            sudo echo "emailname =$emailvar" >> changes.txt
 	   again
@@ -65,7 +75,6 @@ modify_apache(){
        echo "Insert name to directory root"
        read pathvar
 
-       #@ will accept / on the input
        if  grep -q "rootdirectory" changes.txt 
        then
 	   olddir="$(grep "rootdirectory" changes.txt | cut -d "=" -f2)"
@@ -80,7 +89,7 @@ modify_apache(){
 
    elif [ "$1" == "wsgi" ]
    then
-       cd /var/www/html/
+       cd "$webdir"
        dir="wsgiscripts"
        #check if a directory doesnt exist
        if [ ! -d "$dir" ]; then
@@ -100,10 +109,14 @@ modify_apache(){
 	   oldwsgi="$( grep 'wsgifile' changes.txt | cut -d '=' -f2)"  
 	   sudo sed -i "s/$oldwsgi/$wsgi_script/" vhost.conf    
            sudo sed -i "/wsgifile/ s/wsgifile.*/wsgifile=$wsgi_script/" changes.txt
+           echo "you have changed the name of the wsgi file"
+	   echo "check if it has the same name "
            again       
        else
            sudo sed -i "s/myapp/$wsgi_script/" vhost.conf
            sudo echo "wsgifile = $wsgi_script" >> changes.txt
+	   echo "you have changed the name of the wsgi file"
+	   echo "check if it has the same name"
 	   again
        fi 
    fi
@@ -116,7 +129,14 @@ again(){
        then
            parts
        else
-           sudo systemctl reload apache2	       
+           sudo systemctl reload apache2
+	   #check if the user has a gui or not
+           if xhost >& /dev/null
+	      then
+	           xdg-open http://localhost
+            else 
+		  w3m http://localhost 
+           fi
        fi
 }
 
