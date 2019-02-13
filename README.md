@@ -1,2 +1,2 @@
-# apache-mods
-A bash script for changing the values in the apache files
+# apache-flask
+A bash script that gives you the basic configuration for flask in Apache
