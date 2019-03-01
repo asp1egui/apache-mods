@@ -2,7 +2,7 @@
 # apache modifier
 #modify the name of the folders and files of the virtual conf to your need
 service="apache2"
-dirsite="/etc/apache2/sites-enabled"
+dirsite="/etc/apache2/sites-available"
 webdir="/var/www/html"
 modify_apache(){
 
@@ -27,11 +27,9 @@ modify_apache(){
        echo "Need Permissions"
        sudo mkdir "$webdir/python"
        cd
-       pwd
        wget https://raw.githubusercontent.com/asp1egui/apache-mods/master/flaskapp.py
        sudo mv flaskapp.py "$webdir/python/"
-       cd -
-       pwd
+       cd "$dirsite" 
    fi
 
 #takes the answer from parts and check if it has the same value
